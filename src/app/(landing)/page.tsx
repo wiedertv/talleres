@@ -728,7 +728,7 @@ export default function Home() {
 										key={i}
 										href="#"
 										whileHover={{ y: -3 }}
-										className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition-all duration-300"
+										className="w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all duration-300"
 									>
 										<Image src={social} alt="img" width={32} height={32} />
 									</motion.a>
