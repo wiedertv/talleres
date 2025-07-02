@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(uuid())
+  name       String
+  email      String      @unique
+  password   String
+  role       Role        @default(MECHANIC)
+  avatar     String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  clients    Client[]
+  services   Service[]
+  partsSales PartsSale[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  MECHANIC
+  RECEPTIONIST
+}
+
+model Client {
+  id         String       @id @default(uuid())
+  name       String
+  type       ClientType
+  email      String?
+  phone      String
+  address    String?
+  ci         String?
+  rif        String?
+  notes      String?
+  points     Int          @default(0)
+  level      LoyaltyLevel @default(BRONZE)
+  avatar     String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  vehicles   Vehicle[]
+  services   Service[]
+  partsSales PartsSale[]
+  createdBy  User         @relation(fields: [userId], references: [id])
+  userId     String
+
+  @@map("clients")
+}
+
+enum ClientType {
+  PERSONAL
+  BUSINESS
+}
+
+enum LoyaltyLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+model Vehicle {
+  id        String    @id @default(uuid())
+  plate     String    @unique
+  vin       String?
+  make      String
+  model     String
+  year      Int
+  color     String?
+  mileage   Int?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  client    Client    @relation(fields: [clientId], references: [id])
+  clientId  String
+  services  Service[]
+
+  @@map("vehicles")
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  type         ServiceType
+  description  String
+  status       ServiceStatus @default(PENDING)
+  startDate    DateTime
+  endDate      DateTime?
+  total        Float
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  client       Client        @relation(fields: [clientId], references: [id])
+  clientId     String
+  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
+  vehicleId    String?
+  assignedTo   User          @relation(fields: [assignedToId], references: [id])
+  assignedToId String
+  serviceItems ServiceItem[]
+  partsUsed    PartUsage[]
+
+  @@map("services")
+}
+
+enum ServiceType {
+  WITH_VEHICLE
+  WITHOUT_VEHICLE
+}
+
+enum ServiceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ServiceItem {
+  id          String  @id @default(uuid())
+  description String
+  price       Float
+  service     Service @relation(fields: [serviceId], references: [id])
+  serviceId   String
+
+  @@map("service_items")
+}
+
+model Part {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  description String?
+  price       Float
+  stock       Int          @default(0)
+  category    PartCategory
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  partsSales  PartsSale[] // Relación existente
+  partsUsed   PartUsage[] // Relación existente
+  saleItems   SaleItem[] // NUEVA: Relación inversa con SaleItem
+
+  @@map("parts")
+}
+
+enum PartCategory {
+  ENGINE
+  ELECTRICAL
+  BRAKES
+  SUSPENSION
+  TRANSMISSION
+  FILTERS
+  FLUIDS
+  TIRES
+  ACCESSORIES
+}
+
+model PartUsage {
+  id        String  @id @default(uuid())
+  quantity  Int
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId String
+  part      Part    @relation(fields: [partId], references: [id])
+  partId    String
+
+  @@map("part_usages")
+}
+
+model PartsSale {
+  id        String     @id @default(uuid())
+  total     Float
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  client    Client?    @relation(fields: [clientId], references: [id])
+  clientId  String?
+  seller    User       @relation(fields: [sellerId], references: [id])
+  sellerId  String
+  saleItems SaleItem[]
+  Part      Part?      @relation(fields: [partId], references: [id])
+  partId    String?
+
+  @@map("parts_sales")
+}
+
+model SaleItem {
+  id          String    @id @default(uuid())
+  quantity    Int
+  price       Float
+  partsSale   PartsSale @relation(fields: [partsSaleId], references: [id])
+  partsSaleId String
+  part        Part      @relation(fields: [partId], references: [id])
+  partId      String
+
+  @@map("sale_items")
+}
+
+model LoyaltyBenefit {
+  id          String       @id @default(uuid())
+  level       LoyaltyLevel
+  name        String
+  description String
+  discount    Float?
+
+  @@map("loyalty_benefits")
+}
