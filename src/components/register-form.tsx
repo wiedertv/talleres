@@ -1,73 +1,61 @@
-"use client";
+'use client';
 
-import React from 'react';
-import Link from "next/link";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
-import {useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Register, RegisterSchema} from "@/lib/schemas/register.schema";
-import {toast} from "react-toastify";
-import {Input} from "@/components/ui/input";
-import {REGISTER_DATAFORM} from "@/lib/data/register-form.data";
-import {Button} from "@/components/ui/button";
+import React, {useActionState} from 'react';
+import {registerUser} from '@/app/actions/register';
+import Link from 'next/link';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
 
-const RegisterForm = () => {
-
-    const form = useForm<Register>({
-        resolver: zodResolver(RegisterSchema),
-        defaultValues: {
-            username: '',
-            email: '',
-            password: '',
-            confirmPassword: '',
-        }
-    })
-
-    const onSubmit = (data: Register) => {
-        toast("Form submitted successfully!");
-        console.log(data);
-    }
+export default function RegisterForm() {
+    const [state, formAction] = useActionState(registerUser, {success: false, error: ''});
 
     return (
         <>
             <div className="flex flex-col items-center gap-1 text-center mb-4">
-                <h1 className="text-2xl font-bold">Register your new account</h1>
+                <h1 className="text-2xl font-bold">Regístrate</h1>
                 <p className="text-muted-foreground text-sm text-balance">
-                    fill the form to register to the platform.
+                    Llena el formulario para crear tu cuenta.
                 </p>
-                <p className="text-muted-foreground text-sm text-balance">Already have an account? <Link
-                    href="/autenticacion/ingresar"
-                    className='ml-auto text-sm underline-offset-4 hover:underline'>login
-                    here</Link></p>
+                <p className="text-muted-foreground text-sm text-balance">
+                    ¿Ya tienes una cuenta?{' '}
+                    <Link href="/autenticacion/ingresar" className="ml-auto text-sm underline-offset-4 hover:underline">
+                        Inicia sesión aquí
+                    </Link>
+                </p>
             </div>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="grid gap-4">
 
-                        {REGISTER_DATAFORM.map(data => (
-                            <FormField
-                                key={data.name}
-                                control={form.control}
-                                render={
-                                    ({field}) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {data.label}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input placeholder={data.placeholder} {...field} />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    )
-                                } name={data.name}/>
-                        ))}
-                        <Button type={'submit'}>Registrar</Button>
-                    </div>
-                </form>
-            </Form>
+            <form action={formAction} className="grid gap-4">
+                <div>
+                    <label className="block mb-1" htmlFor="username">Nombre de Usuario</label>
+                    <Input id="username" name="username" required placeholder="Ingresa tu nombre de usuario"/>
+                </div>
+
+                <div>
+                    <label className="block mb-1" htmlFor="email">Correo Electrónico</label>
+                    <Input id="email" name="email" required placeholder="Ingresa tu correo"/>
+                </div>
+
+                <div>
+                    <label className="block mb-1" htmlFor="password">Contraseña</label>
+                    <Input id="password" name="password" type="password" required placeholder="Ingresa tu contraseña"/>
+                </div>
+
+                <div>
+                    <label className="block mb-1" htmlFor="confirmPassword">Confirmar Contraseña</label>
+                    <Input id="confirmPassword" name="confirmPassword" type="password" required
+                           placeholder="Repite tu contraseña"/>
+                </div>
+
+                <div>
+                    <label className="block mb-1" htmlFor="organizationName">Nombre de la Organización</label>
+                    <Input id="organizationName" name="organizationName" required
+                           placeholder="Nombre de tu organización"/>
+                </div>
+
+                {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+
+                <Button type="submit" className="w-full">Registrar</Button>
+            </form>
         </>
     );
-};
-
-export default RegisterForm;
+}

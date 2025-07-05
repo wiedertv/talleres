@@ -1,31 +1,37 @@
 export const REGISTER_DATAFORM: {
-    name: "username" | "email" | "password" | "confirmPassword",
+    name: "username" | "email" | "password" | "confirmPassword" | "organizationName",
     label: string,
     placeholder: string,
     description: string
 }[] = [
     {
         name: 'username',
-        label: 'Username',
-        placeholder: 'Enter your username',
-        description: 'This is your nickname on the platform.',
+        label: 'Nombre de Usuario',
+        placeholder: 'Ingresa tu nombre de usuario',
+        description: 'Este será tu nombre dentro de la plataforma.',
     },
     {
         name: 'email',
-        label: 'Email',
-        placeholder: 'Enter your email',
-        description: 'we will use this to send you information related to your account',
+        label: 'Correo Electrónico',
+        placeholder: 'Ingresa tu correo',
+        description: 'Usaremos este correo para enviarte notificaciones.',
     },
     {
         name: 'password',
-        label: 'Password',
-        placeholder: 'Enter your password',
-        description: 'password of your account',
+        label: 'Contraseña',
+        placeholder: 'Ingresa tu contraseña',
+        description: 'La contraseña de tu cuenta.',
     },
     {
         name: 'confirmPassword',
-        label: 'Confirm your password',
-        placeholder: 'Enter your password again',
-        description: 'confirm your password',
+        label: 'Confirma tu Contraseña',
+        placeholder: 'Repite tu contraseña',
+        description: 'Asegúrate de que las contraseñas coincidan.',
+    },
+    {
+        name: 'organizationName',
+        label: 'Nombre de la Organización',
+        placeholder: 'Nombre de tu empresa o negocio',
+        description: 'Nombre con el que identificaremos tu organización.',
     }
 ];
