@@ -1,8 +1,8 @@
 import {UserRepository} from "./user.repository";
-import {Prisma, Role, User} from "@/generated/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../../adapter";
+import {Prisma, Role, User} from "@prisma/client";
 
 export class UserService {
     private userRepository = new UserRepository();

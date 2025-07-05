@@ -19,3 +19,8 @@ export function getSelectedPlan() {
 export function clearSelectedPlan() {
     localStorage.removeItem('selectedPlan');
 }
+
+export function isLoggedIn() {
+    if (typeof document === 'undefined') return false;
+    return document.cookie.includes('auth-token');
+}

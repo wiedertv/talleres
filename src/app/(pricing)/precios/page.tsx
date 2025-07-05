@@ -4,10 +4,10 @@ import {useRouter} from 'next/navigation';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
 import {motion} from 'framer-motion';
-import {getSelectedPlan, saveSelectedPlan} from '@/lib/utils';
-import {isLoggedIn} from '@/lib/auth';
+import {getSelectedPlan, isLoggedIn, saveSelectedPlan} from '@/lib/utils';
 import {Switch} from '@/components/ui/switch';
 import {Badge} from '@/components/ui/badge';
+import {CheckCircle2} from 'lucide-react';
 
 interface Plan {
     id: string;
@@ -52,47 +52,100 @@ const PricingPage = () => {
         }
     }, [router]);
 
+    const highlightPlans = [plans[1]?.id, plans[4]?.id];
+
     return (
         <div className="container mx-auto px-4 py-12">
-            <h1 className="text-4xl font-bold text-center mb-8">Selecciona tu Plan</h1>
+            <h1 className="text-4xl font-bold text-center mb-4">Planes para tu Taller</h1>
+            <p className="text-center text-gray-600 mb-10 max-w-xl mx-auto">
+                Elige el plan que mejor se adapte a las necesidades de tu taller. Cambia entre mensual y anual para
+                aprovechar descuentos exclusivos.
+            </p>
 
-            {/* Switch Mensual / Anual */}
+            {/* Toggle Mensual / Anual */}
             <div className="flex items-center justify-center space-x-4 mb-12">
                 <span className={`font-medium ${!isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>Mensual</span>
-                <Switch checked={isAnnual} onCheckedChange={setIsAnnual}
-                        className="data-[state=checked]:bg-indigo-600"/>
+                <Switch
+                    checked={isAnnual}
+                    onCheckedChange={setIsAnnual}
+                    className="data-[state=checked]:bg-indigo-600"
+                />
                 <div className="flex items-center">
                     <span className={`font-medium ${isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>Anual</span>
-                    <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">Ahorra 20%</Badge>
+                    <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">
+                        Ahorra 20%
+                    </Badge>
                 </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-                {plans.map((plan) => (
-                    <motion.div key={plan.id} whileHover={{y: -5}} transition={{duration: 0.2}}>
-                        <Card className="transition-all border-gray-200 hover:border-indigo-300">
-                            <CardHeader>
-                                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                                <div className="mt-4">
-                                    <span className="text-4xl font-bold text-gray-900">
-                                        {isAnnual ? `${(plan.price * 12 * 0.8).toFixed(2)}€` : `${plan.price.toFixed(2)}€`}
-                                    </span>
-                                    <span className="text-gray-600 ml-2">{isAnnual ? '/año' : '/mes'}</span>
-                                </div>
-                            </CardHeader>
+                {plans.map((plan) => {
+                    const isHighlighted = highlightPlans.includes(plan.id);
+                    const price = plan.price.toFixed(2);
+                    const isAnnualPlan = plan.duration > 30; // Asumimos que duración mayor a 30 días es anual
 
-                            <CardContent className="pt-4 h-80">
-                                <p className="text-gray-700">{plan.description || 'Un excelente plan para tu negocio.'}</p>
-                            </CardContent>
+                    return (
+                        isAnnualPlan !== isAnnual ? null :
+                            <motion.div key={plan.id} whileHover={{y: -5}} transition={{duration: 0.2}}>
+                                <Card
+                                    className={`relative overflow-hidden transition-all border ${
+                                        isHighlighted
+                                            ? 'border-indigo-600 shadow-lg ring-1 ring-indigo-600'
+                                            : 'border-gray-200 hover:border-indigo-300'
+                                    }`}
+                                >
+                                    {isHighlighted && (
+                                        <div
+                                            className="absolute top-0 right-0 bg-indigo-600 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+                                            Más Popular
+                                        </div>
+                                    )}
 
-                            <CardFooter>
-                                <Button className="w-full" onClick={() => handlePlanSelect(plan.id)}>
-                                    Seleccionar Plan
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </motion.div>
-                ))}
+                                    <CardHeader className={`pb-6 ${isHighlighted ? 'bg-indigo-50' : ''}`}>
+                                        <CardTitle className="text-2xl font-bold text-center">{plan.name}</CardTitle>
+                                        <div className="mt-4 text-center">
+                                            <span className="text-4xl font-extrabold text-gray-900">{price}$</span>
+                                            <span className="text-gray-600 ml-2">{isAnnual ? '/año' : '/mes'}</span>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent className="pt-4 h-56 flex flex-col justify-center">
+                                        <p className="text-gray-700 text-center mb-4">
+                                            {plan.description || 'Un excelente plan para tu negocio.'}
+                                        </p>
+
+                                        <ul className="space-y-2 text-sm text-gray-600 max-w-xs mx-auto">
+                                            <li className="flex items-center">
+                                                <CheckCircle2 className="text-green-500 mr-2" size={16}/>
+                                                Soporte básico incluido
+                                            </li>
+                                            <li className="flex items-center">
+                                                <CheckCircle2 className="text-green-500 mr-2" size={16}/>
+                                                Acceso a todos los dashboards
+                                            </li>
+                                            <li className="flex items-center">
+                                                <CheckCircle2 className="text-green-500 mr-2" size={16}/>
+                                                Actualizaciones frecuentes
+                                            </li>
+                                        </ul>
+                                    </CardContent>
+
+                                    <CardFooter>
+                                        <Button
+                                            className={`w-full rounded-full ${
+                                                isHighlighted
+                                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                    : 'bg-white border border-indigo-600 text-indigo-600 hover:bg-indigo-50'
+                                            }`}
+                                            onClick={() => handlePlanSelect(plan.id)}
+                                        >
+                                            Seleccionar Plan
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+                    );
+                })}
             </div>
         </div>
     );

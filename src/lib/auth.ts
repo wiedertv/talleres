@@ -1,3 +1,4 @@
+'use server';
 import {cookies} from 'next/headers';
 import {getUserFromToken} from './jwt.utils';
 
@@ -10,7 +11,3 @@ export async function getCurrentUser() {
     return getUserFromToken(token);
 }
 
-export function isLoggedIn() {
-    if (typeof document === 'undefined') return false;
-    return document.cookie.includes('auth-token');
-}

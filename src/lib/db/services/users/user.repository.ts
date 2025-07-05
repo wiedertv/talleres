@@ -1,5 +1,5 @@
-import {User} from "@/generated/prisma";
 import prisma from "../../adapter";
+import {User} from "@prisma/client";
 
 export class UserRepository {
     async create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
