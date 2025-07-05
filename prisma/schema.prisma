@@ -16,30 +16,24 @@ datasource db {
 }
 
 model User {
-  id         String      @id @default(uuid())
-  name       String
-  email      String      @unique
-  password   String
-  role       Role        @default(MECHANIC)
-  avatar     String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  clients    Client[]
-  services   Service[]
-  partsSales PartsSale[]
+  id                 String              @id @default(uuid())
+  name               String
+  email              String              @unique
+  password           String
+  role               Role                @default(MECHANIC)
+  avatar             String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  clients            Client[]
+  services           Service[]
+  partsSales         PartsSale[]
+  inventoryMovements InventoryMovement[]
 
   @@map("users")
 }
 
-enum Role {
-  ADMIN
-  MANAGER
-  MECHANIC
-  RECEPTIONIST
-}
-
 model Client {
-  id         String       @id @default(uuid())
+  id         String          @id @default(uuid())
   name       String
   type       ClientType
   email      String?
@@ -48,83 +42,74 @@ model Client {
   ci         String?
   rif        String?
   notes      String?
-  points     Int          @default(0)
-  level      LoyaltyLevel @default(BRONZE)
+  points     Int             @default(0)
+  level      LoyaltyLevel    @default(BRONZE)
   avatar     String?
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  vehicles   Vehicle[]
-  services   Service[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  vehicles   VehicleClient[] // Relación muchos a muchos
   partsSales PartsSale[]
-  createdBy  User         @relation(fields: [userId], references: [id])
+  createdBy  User            @relation(fields: [userId], references: [id])
   userId     String
+  services   Service[]
 
   @@map("clients")
 }
 
-enum ClientType {
-  PERSONAL
-  BUSINESS
-}
-
-enum LoyaltyLevel {
-  BRONZE
-  SILVER
-  GOLD
-  PLATINUM
-}
-
 model Vehicle {
-  id        String    @id @default(uuid())
-  plate     String    @unique
-  vin       String?
-  make      String
-  model     String
-  year      Int
-  color     String?
-  mileage   Int?
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  client    Client    @relation(fields: [clientId], references: [id])
-  clientId  String
-  services  Service[]
+  id         String          @id @default(uuid())
+  plate      String          @unique
+  vin        String?
+  make       String
+  model      String
+  year       Int
+  color      String?
+  mileage    Int?
+  notes      String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  clients    VehicleClient[] // Relación muchos a muchos
+  services   Service[]
+  partsSales PartsSale[]
 
   @@map("vehicles")
 }
 
+model VehicleClient {
+  id        String    @id @default(uuid())
+  vehicle   Vehicle   @relation(fields: [vehicleId], references: [id])
+  vehicleId String
+  client    Client    @relation(fields: [clientId], references: [id])
+  clientId  String
+  broughtAt DateTime  @default(now())
+  services  Service[]
+
+  @@unique([vehicleId, clientId, broughtAt])
+  @@map("vehicle_clients")
+}
+
 model Service {
-  id           String        @id @default(uuid())
-  type         ServiceType
-  description  String
-  status       ServiceStatus @default(PENDING)
-  startDate    DateTime
-  endDate      DateTime?
-  total        Float
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  client       Client        @relation(fields: [clientId], references: [id])
-  clientId     String
-  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
-  vehicleId    String?
-  assignedTo   User          @relation(fields: [assignedToId], references: [id])
-  assignedToId String
-  serviceItems ServiceItem[]
-  partsUsed    PartUsage[]
+  id              String         @id @default(uuid())
+  type            ServiceType
+  description     String
+  status          ServiceStatus  @default(PENDING)
+  startDate       DateTime
+  endDate         DateTime?
+  total           Float
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  vehicle         Vehicle?       @relation(fields: [vehicleId], references: [id])
+  vehicleId       String?
+  assignedTo      User           @relation(fields: [assignedToId], references: [id])
+  assignedToId    String
+  serviceItems    ServiceItem[]
+  partsUsed       PartUsage[]
+  vehicleClient   VehicleClient? @relation(fields: [vehicleClientId], references: [id])
+  vehicleClientId String?
+  client          Client?        @relation(fields: [clientId], references: [id])
+  clientId        String?
 
   @@map("services")
-}
-
-enum ServiceType {
-  WITH_VEHICLE
-  WITHOUT_VEHICLE
-}
-
-enum ServiceStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
 }
 
 model ServiceItem {
@@ -138,32 +123,38 @@ model ServiceItem {
 }
 
 model Part {
-  id          String       @id @default(uuid())
-  code        String       @unique
-  name        String
-  description String?
-  price       Float
-  stock       Int          @default(0)
-  category    PartCategory
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  partsSales  PartsSale[] // Relación existente
-  partsUsed   PartUsage[] // Relación existente
-  saleItems   SaleItem[] // NUEVA: Relación inversa con SaleItem
+  id                 String              @id @default(uuid())
+  code               String              @unique
+  name               String
+  description        String?
+  price              Float
+  stock              Int                 @default(0)
+  category           PartCategory
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  partsSales         PartsSale[] // Relación existente
+  partsUsed          PartUsage[] // Relación existente
+  saleItems          SaleItem[] // NUEVA: Relación inversa con SaleItem
+  inventoryMovements InventoryMovement[]
 
   @@map("parts")
 }
 
-enum PartCategory {
-  ENGINE
-  ELECTRICAL
-  BRAKES
-  SUSPENSION
-  TRANSMISSION
-  FILTERS
-  FLUIDS
-  TIRES
-  ACCESSORIES
+model PartsSale {
+  id        String     @id @default(uuid())
+  total     Float
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id])
+  vehicleId String
+  seller    User       @relation(fields: [sellerId], references: [id])
+  sellerId  String
+  Part      Part[]
+  saleItems SaleItem[]
+  Client    Client?    @relation(fields: [clientId], references: [id])
+  clientId  String?
+
+  @@map("parts_sales")
 }
 
 model PartUsage {
@@ -175,22 +166,6 @@ model PartUsage {
   partId    String
 
   @@map("part_usages")
-}
-
-model PartsSale {
-  id        String     @id @default(uuid())
-  total     Float
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  client    Client?    @relation(fields: [clientId], references: [id])
-  clientId  String?
-  seller    User       @relation(fields: [sellerId], references: [id])
-  sellerId  String
-  saleItems SaleItem[]
-  Part      Part?      @relation(fields: [partId], references: [id])
-  partId    String?
-
-  @@map("parts_sales")
 }
 
 model SaleItem {
@@ -213,4 +188,70 @@ model LoyaltyBenefit {
   discount    Float?
 
   @@map("loyalty_benefits")
+}
+
+model InventoryMovement {
+  id          String       @id @default(uuid())
+  part        Part         @relation(fields: [partId], references: [id])
+  partId      String
+  type        MovementType
+  quantity    Int
+  beforeStock Int
+  afterStock  Int
+  reason      String?
+  createdAt   DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [id])
+  userId      String
+
+  @@map("inventory_movements")
+}
+
+enum MovementType {
+  ENTRY // Entrada de inventario (compra, devolución)
+  EXIT // Salida (venta, uso en servicio)
+  ADJUSTMENT // Ajuste manual de stock
+  TRANSFER // Transferencia entre almacenes (si aplica)
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  MECHANIC
+  RECEPTIONIST
+}
+
+enum ClientType {
+  PERSONAL
+  BUSINESS
+}
+
+enum LoyaltyLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum ServiceType {
+  WITH_VEHICLE
+  WITHOUT_VEHICLE
+}
+
+enum ServiceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PartCategory {
+  ENGINE
+  ELECTRICAL
+  BRAKES
+  SUSPENSION
+  TRANSMISSION
+  FILTERS
+  FLUIDS
+  TIRES
+  ACCESSORIES
 }
