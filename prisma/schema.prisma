@@ -15,62 +15,111 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Organization {
   id                 String              @id @default(uuid())
   name               String
-  email              String              @unique
-  password           String
-  role               Role                @default(MECHANIC)
-  avatar             String?
+  owner              User                @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  ownerId            String              @unique
+  users              User[]              @relation("OrganizationUsers")
+  clients            Client[]
+  vehicles           Vehicle[]
+  services           Service[]
+  parts              Part[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  clients            Client[]
-  services           Service[]
-  partsSales         PartsSale[]
   inventoryMovements InventoryMovement[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                String         @id @default(uuid())
+  name              String
+  email             String         @unique
+  password          String
+  role              Role           @default(MECHANIC)
+  avatar            String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now())
+  partsSales        PartsSale[] // Puede vender pero no es dueño del inventario
+  subscription      Subscription[]
+  organization      Organization?  @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  organizationId    String?
+  ownedOrganization Organization?  @relation("OrganizationOwner")
+  services          Service[]      @relation("ServiceAssignedTo") // 👈 Este es el que debes dejar
 
   @@map("users")
 }
 
+model Subscription {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId    String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  price         Float
+  duration      Int // Duración en días
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
 model Client {
-  id         String          @id @default(uuid())
-  name       String
-  type       ClientType
-  email      String?
-  phone      String
-  address    String?
-  ci         String?
-  rif        String?
-  notes      String?
-  points     Int             @default(0)
-  level      LoyaltyLevel    @default(BRONZE)
-  avatar     String?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  vehicles   VehicleClient[] // Relación muchos a muchos
-  partsSales PartsSale[]
-  createdBy  User            @relation(fields: [userId], references: [id])
-  userId     String
-  services   Service[]
+  id             String          @id @default(uuid())
+  name           String
+  type           ClientType
+  email          String?
+  phone          String
+  address        String?
+  ci             String?
+  rif            String?
+  notes          String?
+  points         Int             @default(0)
+  level          LoyaltyLevel    @default(BRONZE)
+  avatar         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  vehicles       VehicleClient[] // Relación muchos a muchos
+  partsSales     PartsSale[]
+  services       Service[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  organizationId String
 
   @@map("clients")
 }
 
 model Vehicle {
-  id         String          @id @default(uuid())
-  plate      String          @unique
-  vin        String?
-  make       String
-  model      String
-  year       Int
-  color      String?
-  mileage    Int?
-  notes      String?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  clients    VehicleClient[] // Relación muchos a muchos
-  services   Service[]
-  partsSales PartsSale[]
+  id             String          @id @default(uuid())
+  plate          String          @unique
+  vin            String?
+  make           String
+  model          String
+  year           Int
+  color          String?
+  mileage        Int?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  clients        VehicleClient[] // Relación muchos a muchos
+  services       Service[]
+  partsSales     PartsSale[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  organizationId String
 
   @@map("vehicles")
 }
@@ -100,7 +149,7 @@ model Service {
   updatedAt       DateTime       @updatedAt
   vehicle         Vehicle?       @relation(fields: [vehicleId], references: [id])
   vehicleId       String?
-  assignedTo      User           @relation(fields: [assignedToId], references: [id])
+  assignedTo      User           @relation("ServiceAssignedTo", fields: [assignedToId], references: [id]) // 👈 Relación nombrada
   assignedToId    String
   serviceItems    ServiceItem[]
   partsUsed       PartUsage[]
@@ -108,6 +157,8 @@ model Service {
   vehicleClientId String?
   client          Client?        @relation(fields: [clientId], references: [id])
   clientId        String?
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  organizationId  String
 
   @@map("services")
 }
@@ -132,10 +183,12 @@ model Part {
   category           PartCategory
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  partsSales         PartsSale[] // Relación existente
-  partsUsed          PartUsage[] // Relación existente
-  saleItems          SaleItem[] // NUEVA: Relación inversa con SaleItem
+  partsSales         PartsSale[]
+  partsUsed          PartUsage[]
+  saleItems          SaleItem[]
   inventoryMovements InventoryMovement[]
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  organizationId     String
 
   @@map("parts")
 }
@@ -191,17 +244,17 @@ model LoyaltyBenefit {
 }
 
 model InventoryMovement {
-  id          String       @id @default(uuid())
-  part        Part         @relation(fields: [partId], references: [id])
-  partId      String
-  type        MovementType
-  quantity    Int
-  beforeStock Int
-  afterStock  Int
-  reason      String?
-  createdAt   DateTime     @default(now())
-  user        User         @relation(fields: [userId], references: [id])
-  userId      String
+  id             String       @id @default(uuid())
+  part           Part         @relation(fields: [partId], references: [id])
+  partId         String
+  type           MovementType
+  quantity       Int
+  beforeStock    Int
+  afterStock     Int
+  reason         String?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
 
   @@map("inventory_movements")
 }
