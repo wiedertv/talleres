@@ -6,7 +6,9 @@ import {redirect} from "next/navigation";
 
 const userService = new UserService();
 
-export async function registerUser(_prevState: never, formData: FormData) {
+export type RegisterState = { success: boolean; error?: string } | null;
+
+export async function registerUser(_prevState: RegisterState, formData: FormData) {
     const username = formData.get('username') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
@@ -44,7 +46,7 @@ export async function registerUser(_prevState: never, formData: FormData) {
         path: '/',
         maxAge: 60 * 60 * 24, // 1 día
     });
-    
+
     // Redirigir a precios
     redirect('/precios');
 }

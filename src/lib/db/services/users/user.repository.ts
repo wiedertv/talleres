@@ -15,7 +15,37 @@ export class UserRepository {
     }
 
     async findByEmail(email: string) {
-        return prisma.user.findUnique({where: {email}});
+        return prisma.user.findUnique({
+            where: {email},
+            include: {
+                organization: {
+                    include: {
+                        subscription: {
+                            include: {
+                                plan: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async profile(id: string) {
+        return prisma.user.findUnique({
+            where: {id},
+            include: {
+                organization: {
+                    include: {
+                        subscription: {
+                            include: {
+                                plan: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     async findAll() {

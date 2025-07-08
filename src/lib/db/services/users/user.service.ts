@@ -50,7 +50,12 @@ export class UserService {
         if (!valid) return {success: false, error: "Contraseña incorrecta"};
 
         const token = jwt.sign(
-            {userId: user.id, role: user.role, organizationId: user.organizationId},
+            {
+                userId: user.id,
+                role: user.role,
+                organizationId: user.organizationId,
+                subscriptionId: user.subscription?.id
+            },
             process.env.JWT_SECRET!,
             {expiresIn: "1d"}
         );
@@ -87,5 +92,13 @@ export class UserService {
         return this.userRepository.findByOrganization(admin.organizationId!).then(users =>
             users.filter((user: User) => user.role !== Role.ADMIN)
         );
+    }
+
+    async getProfile(userId: string) {
+        const user = await this.userRepository.profile(userId);
+        if (!user) {
+            return {success: false, error: 'Usuario no encontrado'};
+        }
+        return {success: true, data: user};
     }
 }

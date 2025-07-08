@@ -4,7 +4,7 @@ import {useRouter} from 'next/navigation';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
 import {motion} from 'framer-motion';
-import {getSelectedPlan, isLoggedIn, saveSelectedPlan} from '@/lib/utils';
+import {getSelectedPlan, saveSelectedPlan} from '@/lib/utils';
 import {Switch} from '@/components/ui/switch';
 import {Badge} from '@/components/ui/badge';
 import {CheckCircle2} from 'lucide-react';
@@ -35,21 +35,50 @@ const PricingPage = () => {
         fetchPlans();
     }, []);
 
-    const handlePlanSelect = (planId: string) => {
+    const handlePlanSelect = async (planId: string) => {
         saveSelectedPlan(planId);
 
-        if (isLoggedIn()) {
-            router.push('/procesar-pago');
-        } else {
+        try {
+            const res = await fetch('/api/auth', {
+                method: 'GET',
+                credentials: 'include', // 👈 asegura que se envíen las cookies
+            });
+
+            const {loggedIn} = await res.json();
+            console.log(loggedIn);
+            if (loggedIn) {
+                router.push('/procesar-pago');
+            } else {
+                router.push('/autenticacion/registro');
+            }
+        } catch (error) {
+            console.error('Error al verificar login', error);
             router.push('/autenticacion/registro');
         }
     };
 
     useEffect(() => {
-        const selectedPlan = getSelectedPlan();
-        if (isLoggedIn() && selectedPlan) {
-            router.push('/procesar-pago');
-        }
+        const checkLoginAndRedirect = async () => {
+            const selectedPlan = getSelectedPlan();
+            if (!selectedPlan) return;
+
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'GET',
+                    credentials: 'include', // 👈 Necesario para enviar cookies
+                });
+
+                const {loggedIn} = await res.json();
+                console.log(loggedIn);
+                if (loggedIn) {
+                    router.push('/procesar-pago');
+                }
+            } catch (error) {
+                console.error('Error al verificar el estado de login', error);
+            }
+        };
+
+        checkLoginAndRedirect();
     }, [router]);
 
     const highlightPlans = [plans[1]?.id, plans[4]?.id];
